@@ -1,64 +1,65 @@
-// Package pipeline wires tail sources to sink destinations,
-// reading log entries from the manager and fanning them out.
+// Package pipeline wires tail sources to sink destinations.
 package pipeline
 
 import (
 	"context"
 	"log"
+	"strings"
 
+	"github.com/yourorg/logpipe/internal/filter"
 	"github.com/yourorg/logpipe/internal/sink"
 	"github.com/yourorg/logpipe/internal/tail"
 )
 
-// Entry represents a single log line together with its origin.
-type Entry struct {
-	Source string
-	Line   string
-}
-
-// Pipeline connects a tail.Manager to a sink.Manager and pumps entries
-// between them until the context is cancelled.
+// Pipeline reads lines from a tail manager and writes them to a sink manager.
 type Pipeline struct {
-	tails *tail.Manager
-	sinks *sink.Manager
+	tails  *tail.Manager
+	sinks  *sink.Manager
+	filter *filter.Filter
 }
 
-// New creates a Pipeline from the supplied managers.
-func New(t *tail.Manager, s *sink.Manager) *Pipeline {
-	return &Pipeline{tails: t, sinks: s}
+// New creates a Pipeline. If rules is nil or empty no filtering is applied.
+func New(tails *tail.Manager, sinks *sink.Manager, rules []filter.Rule) (*Pipeline, error) {
+	f, err := filter.New(rules)
+	if err != nil {
+		return nil, err
+	}
+	return &Pipeline{tails: tails, sinks: sinks, filter: f}, nil
 }
 
-// Run starts pumping log lines from all tail sources into all sinks.
-// It blocks until ctx is cancelled, then drains any remaining lines and
-// closes the sink manager.
-func (p *Pipeline) Run(ctx context.Context) error {
+// Run starts the pipeline and blocks until ctx is cancelled.
+func (p *Pipeline) Run(ctx context.Context) {
 	lines := p.tails.Lines()
-
 	for {
 		select {
-		case entry, ok := <-lines:
-			if !ok {
-				// channel closed — all tailers finished
-				return p.sinks.Close()
-			}
-			if err := p.sinks.Write(entry.Source, entry.Line); err != nil {
-				log.Printf("pipeline: write error: %v", err)
-			}
 		case <-ctx.Done():
-			// drain remaining buffered lines before stopping
-			for {
-				select {
-				case entry, ok := <-lines:
-					if !ok {
-						return p.sinks.Close()
-					}
-					if err := p.sinks.Write(entry.Source, entry.Line); err != nil {
-						log.Printf("pipeline: write error during drain: %v", err)
-					}
-				default:
-					return p.sinks.Close()
+			return
+		case line, ok := <-lines:
+			if !ok {
+				return
+			}
+			if !p.filter.NoRules() {
+				fields := extractFields(line)
+				if !p.filter.Match(fields) {
+					continue
 				}
+			}
+			if err := p.sinks.Write(line); err != nil {
+				log.Printf("pipeline: write error: %v", err)
 			}
 		}
 	}
+}
+
+// extractFields builds a minimal field map from a raw log line.
+// It always sets "_raw"; for lines that look like "key=value" pairs it also
+// populates individual fields.
+func extractFields(line string) map[string]string {
+	fields := map[string]string{"_raw": line}
+	for _, token := range strings.Fields(line) {
+		if kv := strings.SplitN(token, "=", 2); len(kv) == 2 {
+			fields[kv[0]] = strings.Trim(kv[1], `"`)
+		}
+	}
+	return fields
 }
