@@ -16,4 +16,7 @@
 //
 // Each source maintains its own independent counter that resets at the
 // start of each window. The limiter is safe for concurrent use.
+//
+// A zero or negative limit is rejected by New and will return an error.
+// A zero or negative window duration is likewise rejected.
 package ratelimit
