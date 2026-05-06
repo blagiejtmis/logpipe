@@ -23,6 +23,9 @@ func NewFromConfig(cfg *config.Config) (*Router, error) {
 		if len(rc.Sinks) == 0 {
 			return nil, fmt.Errorf("router: rule %d has no sinks", i)
 		}
+		if rc.Source == "" && rc.Field == "" {
+			return nil, fmt.Errorf("router: rule %d must specify at least one of 'source' or 'field'", i)
+		}
 		rules = append(rules, Rule{
 			SourcePattern: rc.Source,
 			FieldKey:      rc.Field,
