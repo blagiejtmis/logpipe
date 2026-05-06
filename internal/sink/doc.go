@@ -22,4 +22,11 @@
 //	if err != nil { ... }
 //	defer m.Close()
 //	m.Write(line)
+//
+// # Error handling
+//
+// Write errors from individual sinks are collected and returned as a combined
+// error so that a failure in one sink does not silently suppress writes to the
+// remaining sinks.  Callers should check the returned error and decide whether
+// to propagate or log it.
 package sink
