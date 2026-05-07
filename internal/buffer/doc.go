@@ -15,6 +15,12 @@
 //     ErrFull is returned to the caller. The existing queue is
 //     preserved intact.
 //
+// # Errors
+//
+// ErrFull is returned by Push when the buffer is at capacity and the
+// drop-new strategy is active. ErrInvalidCapacity is returned by New
+// when the requested capacity is less than 1.
+//
 // # Usage
 //
 //	buf, err := buffer.New(1024, false)
@@ -28,4 +34,9 @@
 //
 // Dropped returns the cumulative number of records lost to overflow,
 // which can be exposed via the metrics registry.
+//
+// # Concurrency
+//
+// All methods on Buffer are safe for concurrent use by multiple
+// goroutines without additional synchronisation.
 package buffer
