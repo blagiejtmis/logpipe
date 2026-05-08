@@ -77,3 +77,18 @@ func TestReset_ClearsState(t *testing.T) {
 		t.Fatal("should be allowed after reset")
 	}
 }
+
+func TestAllow_MultipleSourcesAfterReset(t *testing.T) {
+	l, _ := New(2, time.Second)
+	l.Allow("x")
+	l.Allow("x")
+	l.Allow("y")
+	l.Reset()
+	// After reset, all sources should be cleared and allowed again.
+	if !l.Allow("x") {
+		t.Fatal("expected Allow=true for source x after reset")
+	}
+	if !l.Allow("y") {
+		t.Fatal("expected Allow=true for source y after reset")
+	}
+}
