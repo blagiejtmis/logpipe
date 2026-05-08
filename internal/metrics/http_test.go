@@ -77,3 +77,30 @@ func TestHandler_EmptyRegistry(t *testing.T) {
 		t.Errorf("expected empty snapshot, got %v", got)
 	}
 }
+
+func TestHandler_MultipleCounters(t *testing.T) {
+	reg := NewRegistry()
+	reg.Counter("lines_read").Add(3)
+	reg.Counter("lines_written").Add(5)
+	reg.Counter("errors").Add(1)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	Handler(reg).ServeHTTP(rec, req)
+
+	var got map[string]int64
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	expected := map[string]int64{
+		"lines_read":    3,
+		"lines_written": 5,
+		"errors":        1,
+	}
+	for k, v := range expected {
+		if got[k] != v {
+			t.Errorf("expected %s=%d, got %d", k, v, got[k])
+		}
+	}
+}
