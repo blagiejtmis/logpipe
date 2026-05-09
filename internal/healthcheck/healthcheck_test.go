@@ -41,6 +41,20 @@ func TestChecker_AllOK_ReportsOK(t *testing.T) {
 	}
 }
 
+func TestChecker_ComponentsPreservedInReport(t *testing.T) {
+	c := healthcheck.New()
+	c.Set("tailer", healthcheck.ComponentHealth{Status: healthcheck.StatusOK})
+	c.Set("sink", healthcheck.ComponentHealth{Status: healthcheck.StatusDegraded, Message: "write error"})
+
+	r := c.Report()
+	if len(r.Components) != 2 {
+		t.Fatalf("expected 2 components, got %d", len(r.Components))
+	}
+	if r.Components["sink"].Message != "write error" {
+		t.Fatalf("expected sink message 'write error', got %q", r.Components["sink"].Message)
+	}
+}
+
 func TestHandler_OKResponse(t *testing.T) {
 	c := healthcheck.New()
 	c.Set("pipeline", healthcheck.ComponentHealth{Status: healthcheck.StatusOK})
