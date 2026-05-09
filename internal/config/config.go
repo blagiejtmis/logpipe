@@ -51,6 +51,26 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
+// SourceByName returns the SourceConfig with the given name, or an error if not found.
+func (c *Config) SourceByName(name string) (*SourceConfig, error) {
+	for i := range c.Sources {
+		if c.Sources[i].Name == name {
+			return &c.Sources[i], nil
+		}
+	}
+	return nil, fmt.Errorf("config: no source with name %q", name)
+}
+
+// SinkByName returns the SinkConfig with the given name, or an error if not found.
+func (c *Config) SinkByName(name string) (*SinkConfig, error) {
+	for i := range c.Sinks {
+		if c.Sinks[i].Name == name {
+			return &c.Sinks[i], nil
+		}
+	}
+	return nil, fmt.Errorf("config: no sink with name %q", name)
+}
+
 func (c *Config) validate() error {
 	if len(c.Sources) == 0 {
 		return fmt.Errorf("at least one source is required")
