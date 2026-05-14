@@ -66,3 +66,10 @@ func (fp *Fingerprinter) Compute(rec Record) string {
 	sum := sha256.Sum256([]byte(sb.String()))
 	return hex.EncodeToString(sum[:])
 }
+
+// Equal reports whether two records produce the same fingerprint
+// under this Fingerprinter. This is a convenience wrapper around
+// Compute that avoids the caller having to compare hex strings manually.
+func (fp *Fingerprinter) Equal(a, b Record) bool {
+	return fp.Compute(a) == fp.Compute(b)
+}
