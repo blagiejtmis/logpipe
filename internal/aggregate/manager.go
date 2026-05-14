@@ -68,6 +68,19 @@ func (m *Manager) Snapshot() map[string]map[string]map[string]float64 {
 	return out
 }
 
+// Sources returns the list of source names that have explicit aggregation rules
+// configured, in no particular order.
+func (m *Manager) Sources() []string {
+	if len(m.sources) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(m.sources))
+	for src := range m.sources {
+		names = append(names, src)
+	}
+	return names
+}
+
 func buildAggregator(cfgs []RuleConfig) (*Aggregator, error) {
 	if len(cfgs) == 0 {
 		return nil, nil
