@@ -69,3 +69,9 @@ func (r *Retryer) Do(ctx context.Context, fn func() error) error {
 	}
 	return fmt.Errorf("%w: %w", ErrMaxAttemptsReached, lastErr)
 }
+
+// IsMaxAttemptsReached reports whether err was caused by exhausting all retry
+// attempts, as opposed to context cancellation or another sentinel error.
+func IsMaxAttemptsReached(err error) bool {
+	return errors.Is(err, ErrMaxAttemptsReached)
+}
