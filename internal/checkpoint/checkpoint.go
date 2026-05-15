@@ -53,6 +53,18 @@ func (s *Store) Set(source string, offset int64) error {
 	return s.flush()
 }
 
+// Delete removes the saved offset for source and flushes to disk.
+// It is a no-op if source has no recorded offset.
+func (s *Store) Delete(source string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.offsets[source]; !ok {
+		return nil
+	}
+	delete(s.offsets, source)
+	return s.flush()
+}
+
 // flush writes the current offsets map to disk atomically.
 func (s *Store) flush() error {
 	data, err := json.Marshal(s.offsets)
