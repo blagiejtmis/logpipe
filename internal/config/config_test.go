@@ -90,3 +90,10 @@ sinks:
 		t.Fatal("expected error for unknown field, got nil")
 	}
 }
+
+func TestLoad_EmptyFile(t *testing.T) {
+	_, err := config.Load(writeTemp(t, ""))
+	if err == nil {
+		t.Fatal("expected error for empty config file, got nil")
+	}
+}
